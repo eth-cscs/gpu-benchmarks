@@ -45,7 +45,7 @@ float timeGpu(F&& f)
     f();
 
     checkGpuErrors(cudaEventRecord(stop, cudaStreamDefault));
-    cudaEventSynchronize(stop);
+    checkGpuErrors(cudaEventSynchronize(stop));
 
     float t0;
     checkGpuErrors(cudaEventElapsedTime(&t0, start, stop));

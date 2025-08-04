@@ -53,6 +53,7 @@
 #define cudaPointerAttributes hipPointerAttribute_t
 #define cudaPointerGetAttributes hipPointerGetAttributes
 #define cudaSetDevice hipSetDevice
+#define cudaStreamDefault hipStreamDefault
 #define cudaStreamCreate hipStreamCreate
 #define cudaStreamDestroy hipStreamDestroy
 #define cudaStreamSynchronize hipStreamSynchronize

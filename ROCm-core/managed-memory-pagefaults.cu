@@ -19,29 +19,8 @@
 #include <cstring>
 #include <tuple>
 
-#ifdef __HIP__
-#include <hip/hip_runtime.h>
-#define cudaDeviceSynchronize hipDeviceSynchronize
-#define cudaError_t hipError_t
-#define cudaFree hipFree
-#define cudaGetErrorName hipGetErrorName
-#define cudaGetErrorString hipGetErrorString
-#define cudaGetLastError hipGetLastError
-#define cudaMallocManaged hipMallocManaged
-#define cudaSuccess hipSuccess
-#else
-#include <cuda_runtime.h>
-#endif
-
-#define CHECK(x)                                                               \
-  do {                                                                         \
-    cudaError_t err = x;                                                       \
-    if (err != cudaSuccess) {                                                  \
-      std::fprintf(stderr, "%s:%d: %s - %s\n", __FILE__, __LINE__,             \
-                   cudaGetErrorName(err), cudaGetErrorString(err));            \
-      std::exit(1);                                                            \
-    }                                                                          \
-  } while (false)
+#include "../common/cuda_runtime.hpp"
+#include "../common/timing.cuh"
 
 __global__ void accessKernel(double *data, std::size_t n) {
   auto i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -58,8 +37,8 @@ std::tuple<double, double> accessGpu(double *data, const std::size_t n) {
   constexpr unsigned threadsPerBlock = 1024;
   unsigned blocks = (n + threadsPerBlock - 1) / threadsPerBlock;
   accessKernel<<<blocks, threadsPerBlock>>>(data, n);
-  CHECK(cudaGetLastError());
-  CHECK(cudaDeviceSynchronize());
+  checkGpuErrors(cudaGetLastError());
+  checkGpuErrors(cudaDeviceSynchronize());
 
   const auto end = clock::now();
   const double time = std::chrono::duration<double>(end - start).count();
@@ -96,7 +75,7 @@ int main(int argc, const char *argv[]) {
     printf(" Run %d:\n", run + 1);
 
     double *data;
-    CHECK(cudaMallocManaged(&data, n * sizeof(double)));
+    checkGpuErrors(cudaMallocManaged(&data, n * sizeof(double)));
 
     auto [firstAccessTime, firstAccessBandwidth] = accessCpu(data, nAccessed);
     std::printf("  1st access took %7.5fs (BW: %6.1fGB/s)\n", firstAccessTime,
@@ -106,7 +85,7 @@ int main(int argc, const char *argv[]) {
     std::printf("  2nd access took %7.5fs (BW: %6.1fGB/s)\n", secondAccessTime,
                 secondAccessBandwidth);
 
-    CHECK(cudaFree(data));
+    checkGpuErrors(cudaFree(data));
   }
 
   std::printf("=== GPU ===\n");
@@ -114,7 +93,7 @@ int main(int argc, const char *argv[]) {
     printf(" Run %d:\n", run + 1);
 
     double *data;
-    CHECK(cudaMallocManaged(&data, n * sizeof(double)));
+    checkGpuErrors(cudaMallocManaged(&data, n * sizeof(double)));
 
     auto [firstAccessTime, firstAccessBandwidth] = accessGpu(data, nAccessed);
     std::printf("  1st access took %7.5fs (BW: %6.1fGB/s)\n", firstAccessTime,
@@ -124,7 +103,7 @@ int main(int argc, const char *argv[]) {
     std::printf("  2nd access took %7.5fs (BW: %6.1fGB/s)\n", secondAccessTime,
                 secondAccessBandwidth);
 
-    CHECK(cudaFree(data));
+    checkGpuErrors(cudaFree(data));
   }
 
   std::printf("=== CPU, then GPU ===\n");
@@ -132,7 +111,7 @@ int main(int argc, const char *argv[]) {
     printf(" Run %d:\n", run + 1);
 
     double *data;
-    CHECK(cudaMallocManaged(&data, n * sizeof(double)));
+    checkGpuErrors(cudaMallocManaged(&data, n * sizeof(double)));
 
     auto [firstAccessTime, firstAccessBandwidth] = accessCpu(data, nAccessed);
     std::printf("  1st access took %7.5fs (BW: %6.1fGB/s)\n", firstAccessTime,
@@ -142,7 +121,7 @@ int main(int argc, const char *argv[]) {
     std::printf("  2nd access took %7.5fs (BW: %6.1fGB/s)\n", secondAccessTime,
                 secondAccessBandwidth);
 
-    CHECK(cudaFree(data));
+    checkGpuErrors(cudaFree(data));
   }
 
   std::printf("=== GPU, then CPU ===\n");
@@ -150,7 +129,7 @@ int main(int argc, const char *argv[]) {
     printf(" Run %d:\n", run + 1);
 
     double *data;
-    CHECK(cudaMallocManaged(&data, n * sizeof(double)));
+    checkGpuErrors(cudaMallocManaged(&data, n * sizeof(double)));
 
     auto [firstAccessTime, firstAccessBandwidth] = accessGpu(data, nAccessed);
     std::printf("  1st access took %7.5fs (BW: %6.1fGB/s)\n", firstAccessTime,
@@ -160,7 +139,7 @@ int main(int argc, const char *argv[]) {
     std::printf("  2nd access took %7.5fs (BW: %6.1fGB/s)\n", secondAccessTime,
                 secondAccessBandwidth);
 
-    CHECK(cudaFree(data));
+    checkGpuErrors(cudaFree(data));
   }
 
   return 0;

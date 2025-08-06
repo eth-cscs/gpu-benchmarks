@@ -1,3 +1,18 @@
+/*
+ * AMD-GPU benchmarks
+ *
+ * Copyright (c) 2024 CSCS, ETH Zurich
+ *
+ * Please, refer to the LICENSE file in the root directory.
+ * SPDX-License-Identifier: MIT License
+ */
+
+/*! @file
+ * @brief Measuring page faults in managed-memory allocations
+ *
+ * @author Felix Thaler <thaler@cscs.ch>
+ */
+
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>

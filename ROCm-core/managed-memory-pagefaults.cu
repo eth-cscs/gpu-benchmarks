@@ -67,8 +67,24 @@ int main(int argc, const char *argv[]) {
   std::size_t n = 1024ul * 1024 * 1024 * 1024;
   std::size_t nAccessed = 1024ul * 1024 * 1024;
 
-  if (argc > 1)
+#ifdef __HIP_PLATFORM_AMD__
+  const char *xnack = std::getenv("HSA_XNACK");
+  if (!xnack || std::strcmp(xnack, "1")) {
+    std::fprintf(stderr,
+                 "WARNING: HSA_XNACK=1 not set!\n"
+                 "WARNING: This uses a reduced-size physical host allocation "
+                 "instead of pure-virtual 1TiB allocation.\n"
+                 "WARNING: Set the environment variable HSA_XNACK=1 to run the "
+                 "benchmark as expected.\n");
     n = nAccessed;
+  }
+#endif
+
+#ifndef _OPENMP
+  std::fprintf(
+      stderr,
+      "WARNING: compile this benchmark with OpenMP for proper CPU numbers\n");
+#endif
 
   std::printf("=== CPU ===\n");
   for (int run = 0; run < runs; ++run) {

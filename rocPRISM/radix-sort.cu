@@ -25,11 +25,11 @@
 
 int main(int argc, char** argv)
 {
-    using KeyType = uint64_t;
+    using KeyType   = uint64_t;
     using ValueType = uint32_t;
 
-    int power   = argc > 1 ? std::stoi(argv[1]) : 25;
-    int numKeys = 1 << power;
+    int power           = argc > 1 ? std::stoi(argv[1]) : 25;
+    std::size_t numKeys = 1lu << power;
 
     std::vector<KeyType> hostKeys(numKeys);
     {
@@ -46,9 +46,11 @@ int main(int argc, char** argv)
     {
         thrust::sort_by_key(keys.begin(), keys.end(), ordering.begin());
     };
+
+    radixSort(); // warmup
     float t_radixSort = timeGpu(radixSort);
 
-    size_t numBytesMoved = 2 * numKeys * (sizeof(KeyType) + sizeof(ValueType));
+    std::size_t numBytesMoved = 2lu * numKeys * (sizeof(KeyType) + sizeof(ValueType));
     std::cout << "radix sort time for " << numKeys << " key-value pairs: " << t_radixSort / 1000 << " s"
         << ", bandwidth: " << float(numBytesMoved) / t_radixSort / 1000 << " MiB/s" << std::endl;
 

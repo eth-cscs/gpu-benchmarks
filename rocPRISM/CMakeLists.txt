@@ -52,3 +52,5 @@ function(add_test testname sourcename)
 endfunction()
 
 add_test(radix-sort radix-sort.cu)
+add_test(scan scan.cu)
+add_test(reduce reduce.cu)

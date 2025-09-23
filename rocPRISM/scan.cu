@@ -8,7 +8,7 @@
  */
 
 /*! @file
- * @brief Radix-sort performance test
+ * @brief Scan performance test
  *
  * @author Sebastian Keller <sebastian.f.keller@gmail.com>
  */

@@ -38,7 +38,6 @@ int main(int argc, char** argv)
     }
 
     thrust::device_vector<ValueType>   values = hostValues;
-    thrust::device_vector<ValueType> scannedValues(numValues);
 
     auto reduce = [&]()
     {

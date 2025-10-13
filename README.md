@@ -12,8 +12,9 @@ to be run on AMD GPUs without modification while not requiring HIP as a dependen
 * Memory access latencies
 * Memory bandwidth
 
-## rocPRISM
+## Parallel algorithms
 
+Support for both ROCm's rocPRIM and cub/thrust.
 * Radix sort
 * Prefix sums
 * Reductions

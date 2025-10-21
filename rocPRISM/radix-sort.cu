@@ -21,7 +21,7 @@
 #include <thrust/sequence.h>
 #include <thrust/sort.h>
 
-#include "timing.cuh"
+#include "../common/timing.cuh"
 
 int main(int argc, char** argv)
 {

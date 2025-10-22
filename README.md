@@ -1,4 +1,4 @@
-# AMD GPU benchmarks
+# GPU benchmarks
 
 A collection of GPU benchmarks to evaluate software stack performance.
 The tests are written in CUDA with a simple HIP compatibility layer that allows the tests
@@ -14,7 +14,7 @@ to be run on AMD GPUs without modification while not requiring HIP as a dependen
 
 ## Parallel algorithms
 
-Support for both ROCm's rocPRIM and cub/thrust.
+Support for both ROCm's rocPRIM and NVIDIA's cub/thrust.
 * Radix sort
 * Prefix sums
 * Reductions

@@ -1,0 +1,29 @@
+# Copyright (c) 2025 ETH Zurich
+
+name: Lint Yaml Files
+
+on:
+  merge_group:
+  pull_request:
+  push:
+    branches:
+      - main
+      - reframe-ci
+
+jobs:
+  build:
+    name: Lint Yaml Files
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Lint Yaml files
+        uses: github/super-linter/slim@v7
+        env:
+          DEFAULT_BRANCH: main
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_YAML: true
+          YAML_CONFIG_FILE: .yamllint.yml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

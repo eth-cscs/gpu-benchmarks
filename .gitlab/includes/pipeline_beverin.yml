@@ -1,0 +1,64 @@
+include:
+  - local: '.gitlab/includes/common_pipeline.yml'
+
+stages:
+  - build
+  - test
+
+variables:
+  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v5"
+
+
+build_benchmarks_mi300:
+  extends:
+    - .uenv-runner-beverin-mi300
+    - .cmake_common
+    - .build_common
+  stage: build
+  image: $UENV_IMAGE
+  script:
+    - cmake --version
+    - hipcc --version || echo "HIP not found in PATH"
+
+    - cmake -Bbuild $CMAKE_COMMON_FLAGS
+        -DWITH_HIP=ON
+        -DWITH_CUDA=OFF
+    - cmake --build build
+
+  artifacts:
+    paths:
+      - build/
+    expire_in: 1 hour
+
+
+test_radix_sort_mi300:
+  needs: [build_benchmarks_mi300]
+  extends:
+    - .uenv-runner-beverin-mi300
+    - .test_common
+  stage: test
+  image: $UENV_IMAGE
+  script:
+    - ./build/radix-sort
+
+
+test_scan_mi300:
+  needs: [build_benchmarks_mi300]
+  extends:
+    - .uenv-runner-beverin-mi300
+    - .test_common
+  stage: test
+  image: $UENV_IMAGE
+  script:
+    - ./build/scan
+
+
+test_reduce_mi300:
+  needs: [build_benchmarks_mi300]
+  extends:
+    - .uenv-runner-beverin-mi300
+    - .test_common
+  stage: test
+  image: $UENV_IMAGE
+  script:
+    - ./build/reduce

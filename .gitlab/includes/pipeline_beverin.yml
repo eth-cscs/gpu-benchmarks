@@ -32,7 +32,7 @@ build_benchmarks_mi300:
     expire_in: 1 hour
 
 
-test_radix_sort_mi300:
+test_benchmarks_mi300:
   needs: [build_benchmarks_mi300]
   extends:
     - .uenv-runner-beverin-mi300
@@ -40,26 +40,4 @@ test_radix_sort_mi300:
   stage: test
   image: $UENV_IMAGE
   script:
-    - ./build/radix-sort
-
-
-test_scan_mi300:
-  needs: [build_benchmarks_mi300]
-  extends:
-    - .uenv-runner-beverin-mi300
-    - .test_common
-  stage: test
-  image: $UENV_IMAGE
-  script:
-    - ./build/scan
-
-
-test_reduce_mi300:
-  needs: [build_benchmarks_mi300]
-  extends:
-    - .uenv-runner-beverin-mi300
-    - .test_common
-  stage: test
-  image: $UENV_IMAGE
-  script:
-    - ./build/reduce
+    - ctest --test-dir build --output-on-failure

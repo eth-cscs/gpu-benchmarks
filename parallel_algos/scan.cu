@@ -8,12 +8,13 @@
  */
 
 /*! @file
- * @brief Scan performance test
+ * @brief Scan performance test with memory tracking
  *
  * @author Sebastian Keller <sebastian.f.keller@gmail.com>
  */
 
 #include <algorithm>
+#include <cstdio>
 #include <iostream>
 #include <numeric>
 #include <random>
@@ -22,6 +23,7 @@
 #include <thrust/scan.h>
 
 #include "../common/timing.cuh"
+#include "memory_tracking_allocator.cuh"
 
 int main(int argc, char** argv)
 {
@@ -37,26 +39,51 @@ int main(int argc, char** argv)
         std::generate(hostValues.begin(), hostValues.end(), [&](){ return dist(gen); });
     }
 
-    thrust::device_vector<ValueType>   values = hostValues;
+    thrust::device_vector<ValueType> values = hostValues;
     thrust::device_vector<ValueType> scannedValues(numValues);
 
-    auto scan = [&]()
+    tracking_mr memory_tracker;
+    thrust::mr::allocator<ValueType, tracking_mr> alloc(&memory_tracker);
+
+    auto scanNormal = [&]()
     {
-        thrust::exclusive_scan(values.begin(), values.end(), scannedValues.begin());
+#ifdef __HIP__
+        thrust::exclusive_scan(thrust::hip::par, values.begin(), values.end(), scannedValues.begin());
+#else
+        thrust::exclusive_scan(thrust::cuda::par, values.begin(), values.end(), scannedValues.begin());
+#endif
     };
 
-    scan(); // warmup
-    float t_scan = timeGpu(scan);
+    auto scanTracked = [&]()
+    {
+#ifdef __HIP__
+        thrust::exclusive_scan(thrust::hip::par(alloc), values.begin(), values.end(), scannedValues.begin());
+#else
+        thrust::exclusive_scan(thrust::cuda::par(alloc), values.begin(), values.end(), scannedValues.begin());
+#endif
+    };
 
+    scanNormal(); // warmup
+    float timeScan = timeGpu(scanNormal);
+    thrust::device_vector<ValueType> scannedValuesNormal = scannedValues;
+
+    scanTracked(); // warmup
+    memory_tracker.reset();
+    float timeScanTracked = timeGpu(scanTracked);
+
+    memory_tracker.print_stats();
     std::size_t numBytesMoved = 2lu * numValues * sizeof(ValueType);
-    std::cout << "exclusive scan time for " << numValues << " values: " << t_scan / 1000 << " s"
-        << ", bandwidth: " << float(numBytesMoved) / t_scan / 1000 << " MiB/s" << std::endl;
+    std::printf("exclusive scan normal time for %zu values: %f s, bandwidth: %f MiB/s\n",
+                numValues, timeScan / 1000, float(numBytesMoved) / timeScan / 1000);
+    std::printf("exclusive scan with memory tracking time for %zu values: %f s, bandwidth: %f MiB/s\n",
+                numValues, timeScanTracked / 1000, float(numBytesMoved) / timeScanTracked / 1000);
 
     if (power <= 25)
     {
         std::vector<ValueType> hostScan(numValues);
         std::exclusive_scan(hostValues.begin(), hostValues.end(), hostScan.begin(), ValueType(0));
-        std::cout << "GPU matches CPU: " << (hostScan.back() == scannedValues.back() ? "PASS" : "FAIL") << std::endl;
+        std::printf("GPU matches CPU: %s\n", (hostScan.back() == scannedValues.back() ? "PASS" : "FAIL"));
+        std::printf("GPU normal matches GPU with tracked memory: %s\n", (scannedValuesNormal.back() == scannedValues.back() ? "PASS" : "FAIL"));
     }
 
     return 0;

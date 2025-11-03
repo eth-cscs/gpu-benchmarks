@@ -8,12 +8,13 @@
  */
 
 /*! @file
- * @brief Radix-sort performance test
+ * @brief Radix-sort performance test with memory tracking
  *
  * @author Sebastian Keller <sebastian.f.keller@gmail.com>
  */
 
 #include <algorithm>
+#include <cstdio>
 #include <iostream>
 #include <random>
 
@@ -22,6 +23,7 @@
 #include <thrust/sort.h>
 
 #include "../common/timing.cuh"
+#include "memory_tracking_allocator.cuh"
 
 int main(int argc, char** argv)
 {
@@ -42,17 +44,44 @@ int main(int argc, char** argv)
     thrust::device_vector<ValueType> ordering(numKeys);
     thrust::sequence(ordering.begin(), ordering.end(), 0);
 
-    auto radixSort = [&]()
+    tracking_mr memory_tracker;
+    thrust::mr::allocator<KeyType, tracking_mr> alloc(&memory_tracker);
+
+    auto radixSortNormal = [&]()
     {
-        thrust::sort_by_key(keys.begin(), keys.end(), ordering.begin());
+#ifdef __HIP__
+        thrust::sort_by_key(thrust::hip::par, keys.begin(), keys.end(), ordering.begin());
+#else
+        thrust::sort_by_key(thrust::cuda::par, keys.begin(), keys.end(), ordering.begin());
+#endif
     };
 
-    radixSort(); // warmup
-    float t_radixSort = timeGpu(radixSort);
+    auto radixSortTracked = [&]()
+    {
+#ifdef __HIP__
+        thrust::sort_by_key(thrust::hip::par(alloc), keys.begin(), keys.end(), ordering.begin());
+#else
+        thrust::sort_by_key(thrust::cuda::par(alloc), keys.begin(), keys.end(), ordering.begin());
+#endif
+    };
 
+    radixSortNormal(); // warmup
+    float timeRadixSort = timeGpu(radixSortNormal);    // to compare with memory tracking time
+
+    // Re-initialize keys for tracked version
+    keys = hostKeys;
+    thrust::sequence(ordering.begin(), ordering.end(), 0);
+
+    radixSortTracked(); // warmup
+    memory_tracker.reset();
+    float timeRadixSortTracked = timeGpu(radixSortTracked);
+
+    memory_tracker.print_stats();
     std::size_t numBytesMoved = 2lu * numKeys * (sizeof(KeyType) + sizeof(ValueType));
-    std::cout << "radix sort time for " << numKeys << " key-value pairs: " << t_radixSort / 1000 << " s"
-        << ", bandwidth: " << float(numBytesMoved) / t_radixSort / 1000 << " MiB/s" << std::endl;
+    std::printf("radix sort normal time for %zu key-value pairs: %f s, bandwidth: %f MiB/s\n",
+                numKeys, timeRadixSort / 1000, float(numBytesMoved) / timeRadixSort / 1000);
+    std::printf("radix sort with memory tracking time for %zu key-value pairs: %f s, bandwidth: %f MiB/s\n",
+                numKeys, timeRadixSortTracked / 1000, float(numBytesMoved) / timeRadixSortTracked / 1000);
 
     return 0;
 }

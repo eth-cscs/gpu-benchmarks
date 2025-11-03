@@ -23,6 +23,7 @@ jobs:
         uses: github/super-linter/slim@v7
         env:
           DEFAULT_BRANCH: main
+          LINTER_RULES_PATH: .github
           VALIDATE_ALL_CODEBASE: false
           VALIDATE_YAML: true
           YAML_CONFIG_FILE: .yamllint.yml

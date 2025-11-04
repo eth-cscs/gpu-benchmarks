@@ -1,0 +1,17 @@
+include:
+  - remote: 'https://gitlab.com/cscs-ci/recipes/-/raw/master/templates/v2/.ci-ext.yml'
+
+.cmake_common:
+  variables:
+    CMAKE_COMMON_FLAGS: "-S parallel_algos -GNinja -DCMAKE_BUILD_TYPE=Release"
+
+.build_common:
+  variables:
+    SLURM_TIMELIMIT: "00:15:00"
+    SLURM_JOB_NUM_NODES: 1
+
+.test_common:
+  variables:
+    SLURM_TIMELIMIT: "00:10:00"
+    SLURM_JOB_NUM_NODES: 1
+    SLURM_NTASKS: 1

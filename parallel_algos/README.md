@@ -1,4 +1,4 @@
-# rocPRISM benchmarks
+# Parallel algorithms benchmarks
 
 Dependencies: standard CUDA or HIP installation is enough
 
@@ -8,7 +8,7 @@ Dependencies: standard CUDA or HIP installation is enough
 
 Building with CMake:
 ```bash
-cmake -DCMAKE_HIP_ARCHITECUTRES=gfx90a;gfx942 <GIT-SOURCE-DIR>/rocPRISM
+cmake -DCMAKE_HIP_ARCHITECUTRES=gfx90a;gfx942 <GIT-SOURCE-DIR>/parallel-algos
 make
 ```
 Running the test on `2^n` key-value pairs:
@@ -27,7 +27,7 @@ Metric to plot is bandwidth and/or keys/second (134217728 / 0.0484017 = 2.77 Gke
 ### building with CUDA
 
 ```bash
-cmake -DCMAKE_CUDA_ARCHITECUTRES=90 <GIT-SOURCE-DIR>/rocPRISM
+cmake -DCMAKE_CUDA_ARCHITECUTRES=90 <GIT-SOURCE-DIR>/parallel-algos
 ```
 
 Example output:

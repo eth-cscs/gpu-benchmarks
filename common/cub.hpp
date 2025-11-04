@@ -1,5 +1,5 @@
 /*
- * AMD-GPU benchmarks
+ * GPU benchmarks
  *
  * Copyright (c) 2024 CSCS, ETH Zurich
  *

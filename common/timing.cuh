@@ -1,5 +1,5 @@
 /*
- * AMD-GPU benchmarks
+ * GPU benchmarks
  *
  * Copyright (c) 2024 CSCS, ETH Zurich
  *
@@ -16,7 +16,7 @@
 #pragma once
 
 #include <chrono>
-#include "cuda_runtime.hpp"
+#include "./cuda_runtime.hpp"
 
 inline void checkErr(cudaError_t err, const char* filename, int lineno, const char* funcName)
 {

@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   int n_sample = 1;
   int n_batch = 1;
 
-  CLI::App app{"spla benchmark"};
+  CLI::App app{"FFT benchmark"};
   app.add_option("-n", sizes,
                  "FFT size. Between 1 and 3 values for 1D, 2D or 3D FFTs.")
       ->required()

@@ -30,13 +30,16 @@ using ComplexFloatType = GPU_FFT_PREFIX(Complex);
 using ComplexDoubleType = GPU_FFT_PREFIX(DoubleComplex);
 
 // Complex type selector
-template <typename T> struct ComplexType;
+template <typename T>
+struct ComplexType;
 
-template <> struct ComplexType<double> {
+template <>
+struct ComplexType<double> {
   using type = ComplexDoubleType;
 };
 
-template <> struct ComplexType<float> {
+template <>
+struct ComplexType<float> {
   using type = ComplexFloatType;
 };
 
@@ -51,7 +54,7 @@ constexpr auto Backward = CUFFT_INVERSE;
 constexpr auto Forward = HIPFFT_FORWARD;
 constexpr auto Backward = HIPFFT_BACKWARD;
 #endif
-} // namespace TransformDirection
+}  // namespace TransformDirection
 
 // ==================================
 // Transform types
@@ -74,38 +77,47 @@ constexpr auto Z2Z = HIPFFT_Z2Z;
 #endif
 
 // Transform type selector
-template <typename T> struct ComplexToComplex;
+template <typename T>
+struct ComplexToComplex;
 
-template <> struct ComplexToComplex<double> {
+template <>
+struct ComplexToComplex<double> {
   constexpr static auto value = Z2Z;
 };
 
-template <> struct ComplexToComplex<float> {
+template <>
+struct ComplexToComplex<float> {
   constexpr static auto value = C2C;
 };
 
 // Transform type selector
-template <typename T> struct RealToComplex;
+template <typename T>
+struct RealToComplex;
 
-template <> struct RealToComplex<double> {
+template <>
+struct RealToComplex<double> {
   constexpr static auto value = D2Z;
 };
 
-template <> struct RealToComplex<float> {
+template <>
+struct RealToComplex<float> {
   constexpr static auto value = R2C;
 };
 
 // Transform type selector
-template <typename T> struct ComplexToReal;
+template <typename T>
+struct ComplexToReal;
 
-template <> struct ComplexToReal<double> {
+template <>
+struct ComplexToReal<double> {
   constexpr static auto value = Z2D;
 };
 
-template <> struct ComplexToReal<float> {
+template <>
+struct ComplexToReal<float> {
   constexpr static auto value = C2R;
 };
-} // namespace TransformType
+}  // namespace TransformType
 
 // ==================================
 // Result values
@@ -116,7 +128,7 @@ constexpr auto Success = CUFFT_SUCCESS;
 #else
 constexpr auto Success = HIPFFT_SUCCESS;
 #endif
-} // namespace result
+}  // namespace result
 
 // ==================================
 // Error check functions
@@ -170,39 +182,48 @@ inline auto execute(HandleType &plan, const ComplexFloatType *iData,
 // Forwarding functions of to GPU API
 // ==================================
 
-template <typename... ARGS> inline auto create(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto create(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(Create)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto make_plan_many(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto make_plan_many(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(MakePlanMany)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto plan_many(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto plan_many(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(PlanMany)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto plan_1d(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto plan_1d(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(Plan1d)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto plan_2d(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto plan_2d(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(Plan2d)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto plan_3d(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto plan_3d(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(Plan3d)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto set_work_area(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto set_work_area(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(SetWorkArea)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto destroy(ARGS &&...args) -> ResultType {
+template <typename... ARGS>
+inline auto destroy(ARGS &&...args) -> ResultType {
   return GPU_FFT_PREFIX(Destroy)(std::forward<ARGS>(args)...);
 }
 
-template <typename... ARGS> inline auto set_stream(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto set_stream(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(SetStream)(std::forward<ARGS>(args)...));
 }
 
@@ -211,7 +232,7 @@ inline auto set_auto_allocation(ARGS &&...args) -> void {
   check_result(GPU_FFT_PREFIX(SetAutoAllocation)(std::forward<ARGS>(args)...));
 }
 
-} // namespace fft
-} // namespace gpu
+}  // namespace fft
+}  // namespace gpu
 
 #undef GPU_FFT_PREFIX

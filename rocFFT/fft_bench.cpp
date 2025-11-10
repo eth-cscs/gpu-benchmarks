@@ -1,5 +1,4 @@
 #include <CLI/CLI.hpp>
-
 #include <cstddef>
 #include <iostream>
 #include <numeric>
@@ -81,7 +80,6 @@ float bench_fft(std::vector<int> sizes, int n_batch, int n_sample) {
 }
 
 int main(int argc, char **argv) {
-
   std::vector<int> sizes;
   std::string precision;
   int n_sample = 1;
@@ -116,10 +114,8 @@ int main(int argc, char **argv) {
   std::cout << "==== FFT Benchmark ====" << std::endl;
 
   std::cout << "Parameters: size = (" << sizes[0];
-  if (sizes.size() >= 2)
-    std::cout << ", " << sizes[1];
-  if (sizes.size() >= 3)
-    std::cout << ", " << sizes[2];
+  if (sizes.size() >= 2) std::cout << ", " << sizes[1];
+  if (sizes.size() >= 3) std::cout << ", " << sizes[2];
   std::cout << ")";
 
   std::cout << ", batch size = " << n_batch << ", samples = " << n_sample

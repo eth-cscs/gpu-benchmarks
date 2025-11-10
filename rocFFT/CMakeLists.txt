@@ -63,7 +63,7 @@ endif()
 if(FFT_BENCH_ROCM)
 	find_package(hip CONFIG REQUIRED)
 	find_package(hipfft CONFIG REQUIRED)
-	list(APPEND FFT_BENCH_EXTERNAL_LIBS hip::hipfft)
+	list(APPEND FFT_BENCH_EXTERNAL_LIBS hip::hipfft hip::host)
 endif()
 
 

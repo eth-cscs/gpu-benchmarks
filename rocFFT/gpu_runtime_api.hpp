@@ -47,7 +47,7 @@ constexpr StatusType ErrorHostMemoryAlreadyRegistered =
 constexpr StatusType ErrorHostMemoryNotRegistered =
     GPU_PREFIX(ErrorHostMemoryNotRegistered);
 constexpr StatusType ErrorUnsupportedLimit = GPU_PREFIX(ErrorUnsupportedLimit);
-} // namespace status
+}  // namespace status
 
 // flags to pass to GPU API
 namespace flag {
@@ -63,7 +63,7 @@ constexpr auto EventDefault = GPU_PREFIX(EventDefault);
 constexpr auto EventBlockingSync = GPU_PREFIX(EventBlockingSync);
 constexpr auto EventDisableTiming = GPU_PREFIX(EventDisableTiming);
 constexpr auto EventInterprocess = GPU_PREFIX(EventInterprocess);
-} // namespace flag
+}  // namespace flag
 
 // ==================================
 // Error check functions
@@ -81,7 +81,8 @@ inline auto check_status(StatusType error) -> void {
 // ===================================================
 // Forwarding functions of to GPU API with error check
 // ===================================================
-template <typename... ARGS> inline auto host_register(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto host_register(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(HostRegister)(std::forward<ARGS>(args)...));
 }
 
@@ -100,7 +101,8 @@ inline auto stream_wait_event(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(StreamWaitEvent)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto event_create(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto event_create(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(EventCreate)(std::forward<ARGS>(args)...));
 }
 
@@ -109,7 +111,8 @@ inline auto event_create_with_flags(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(EventCreateWithFlags)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto event_record(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto event_record(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(EventRecord)(std::forward<ARGS>(args)...));
 }
 
@@ -123,19 +126,23 @@ inline auto event_elapsed_time(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(EventElapsedTime)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto malloc(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto malloc(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(Malloc)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto memcpy(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto memcpy(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(Memcpy)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto memcpy_2d(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto memcpy_2d(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(Memcpy2D)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto memcpy_async(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto memcpy_async(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(MemcpyAsync)(std::forward<ARGS>(args)...));
 }
 
@@ -144,11 +151,13 @@ inline auto memcpy_2d_async(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(Memcpy2DAsync)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto get_device(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto get_device(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(GetDevice)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto set_device(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto set_device(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(SetDevice)(std::forward<ARGS>(args)...));
 }
 
@@ -162,7 +171,8 @@ inline auto stream_synchronize(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(StreamSynchronize)(std::forward<ARGS>(args)...));
 }
 
-template <typename... ARGS> inline auto memset_async(ARGS &&...args) -> void {
+template <typename... ARGS>
+inline auto memset_async(ARGS &&...args) -> void {
   check_status(GPU_PREFIX(MemsetAsync)(std::forward<ARGS>(args)...));
 }
 
@@ -193,11 +203,7 @@ inline auto get_last_error() -> StatusType {
 }
 
 template <typename... ARGS>
-inline auto pointer_get_attributes(ARGS &&...args) -> StatusType {
-  return GPU_PREFIX(PointerGetAttributes)(std::forward<ARGS>(args)...);
-}
-
-template <typename... ARGS> inline auto free(ARGS &&...args) -> StatusType {
+inline auto free(ARGS &&...args) -> StatusType {
   return GPU_PREFIX(Free)(std::forward<ARGS>(args)...);
 }
 
@@ -211,7 +217,7 @@ inline auto event_destroy(ARGS &&...args) -> StatusType {
   return GPU_PREFIX(EventDestroy)(std::forward<ARGS>(args)...);
 }
 
-} // namespace api
-} // namespace gpu
+}  // namespace api
+}  // namespace gpu
 
 #undef GPU_PREFIX

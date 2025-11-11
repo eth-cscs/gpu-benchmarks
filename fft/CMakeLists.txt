@@ -66,6 +66,7 @@ if(FFT_BENCH_ROCM)
 	list(APPEND FFT_BENCH_EXTERNAL_LIBS hip::hipfft hip::host)
 endif()
 
+enable_testing()
 
 add_executable(fft_bench fft_bench.cpp)
 target_link_libraries(fft_bench PRIVATE ${FFT_BENCH_EXTERNAL_LIBS})
@@ -76,3 +77,5 @@ endif()
 if(FFT_BENCH_ROCM)
   target_compile_options(fft_bench PRIVATE -DFFT_BENCH_ROCM)
 endif()
+
+add_test(NAME fft COMMAND fft_bench -n 128 128 -p double -s 5 -b 1)

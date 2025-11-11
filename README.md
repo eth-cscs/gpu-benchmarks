@@ -19,7 +19,10 @@ Support for both ROCm's rocPRIM and NVIDIA's cub/thrust.
 * Prefix sums
 * Reductions
 
-## rocSOLVER
+## FFT
 
-## rocFFT
+FFT benchmark for 1D, 2D and 3D transforms.
+Supports hipFFT / rocFFT and cuFFT.
+
+## rocSOLVER
 

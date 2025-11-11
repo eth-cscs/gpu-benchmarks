@@ -3,7 +3,7 @@ include:
 
 .cmake_common:
   variables:
-    CMAKE_COMMON_FLAGS: "-S parallel_algos -GNinja -DCMAKE_BUILD_TYPE=Release"
+    CMAKE_COMMON_FLAGS: "-GNinja -DCMAKE_BUILD_TYPE=Release"
 
 .build_common:
   variables:

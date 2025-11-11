@@ -11,7 +11,7 @@ variables:
   SLURM_PARTITION: "normal"
 
 
-build_benchmarks_gh200:
+build_parallel_algos_gh200:
   extends:
     - .uenv-runner-daint-gh200
     - .cmake_common
@@ -22,23 +22,54 @@ build_benchmarks_gh200:
     - cmake --version
     - nvcc --version || echo "CUDA not found in PATH"
 
-    - cmake -Bbuild $CMAKE_COMMON_FLAGS
+    - cmake -B build_parallel_algos $CMAKE_COMMON_FLAGS
+        -S parallel_algos
         -DWITH_HIP=OFF
         -DWITH_CUDA=ON
-    - cmake --build build
+    - cmake --build build_parallel_algos
 
   artifacts:
     paths:
-      - build/
+      - build_parallel_algos/
     expire_in: 1 hour
 
 
-test_benchmarks_gh200:
-  needs: [build_benchmarks_gh200]
+test_parallel_algos_gh200:
+  needs: [build_parallel_algos_gh200]
   extends:
     - .uenv-runner-daint-gh200
     - .test_common
   stage: test
   image: $UENV_IMAGE
   script:
-    - ctest --test-dir build --output-on-failure
+    - ctest --test-dir build_parallel_algos --output-on-failure
+
+
+build_fft_gh200:
+  extends:
+    - .uenv-runner-daint-gh200
+    - .cmake_common
+    - .build_common
+  stage: build
+  image: $UENV_IMAGE
+  script:
+    - cmake -B build_fft $CMAKE_COMMON_FLAGS
+        -S fft
+        -DFFT_BENCH_GPU_BACKEND=CUDA
+    - cmake --build build_fft
+
+  artifacts:
+    paths:
+      - build_fft/
+    expire_in: 1 hour
+
+
+test_fft_gh200:
+  needs: [build_fft_gh200]
+  extends:
+    - .uenv-runner-daint-gh200
+    - .test_common
+  stage: test
+  image: $UENV_IMAGE
+  script:
+    - ctest --test-dir build_fft --output-on-failure

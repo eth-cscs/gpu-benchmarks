@@ -22,10 +22,13 @@ build_benchmarks_gh200:
     - cmake --version
     - nvcc --version || echo "CUDA not found in PATH"
 
+    - rm -rf build
     - cmake -Bbuild $CMAKE_COMMON_FLAGS
         -DWITH_HIP=OFF
         -DWITH_CUDA=ON
-    - cmake --build build
+    - echo "CUDA Architectures configured:"
+    - grep -r "CMAKE_CUDA_ARCHITECTURES" build/CMakeCache.txt || echo "Not found in cache"
+    - cmake --build build --verbose
 
   artifacts:
     paths:

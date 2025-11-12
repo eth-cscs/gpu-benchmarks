@@ -6,7 +6,7 @@ stages:
   - test
 
 variables:
-  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v5"
+  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v9"
   WITH_UENV_VIEW: "default-llvm-amdgpu"
 
 

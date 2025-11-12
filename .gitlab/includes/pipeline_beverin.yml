@@ -7,7 +7,7 @@ stages:
 
 variables:
   UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v9"
-  WITH_UENV_VIEW: "default-llvm-amdgpu"
+  WITH_UENV_VIEW: "default"
 
 
 build_parallel_algos_mi300:

@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 
   CLI::App app{"FFT benchmark"};
   app.add_option("-n", sizes,
-                 "FFT size. Between 1 and 3 values for 1D, 2D or 3D FFTs.")
+                 "FFT size. Between 1 and 3 space-separated values for 1D, 2D or 3D FFTs.")
       ->required()
       ->expected(1, 3)
       ->check(CLI::NonNegativeNumber);

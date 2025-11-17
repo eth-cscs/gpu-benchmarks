@@ -6,11 +6,11 @@ stages:
   - test
 
 variables:
-  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v5"
-  WITH_UENV_VIEW: "default-llvm-amdgpu"
+  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v9"
+  WITH_UENV_VIEW: "default"
 
 
-build_benchmarks_mi300:
+build_parallel_algos_mi300:
   extends:
     - .uenv-runner-beverin-mi300
     - .cmake_common
@@ -21,23 +21,54 @@ build_benchmarks_mi300:
     - cmake --version
     - hipcc --version || echo "HIP not found in PATH"
 
-    - cmake -Bbuild $CMAKE_COMMON_FLAGS
+    - cmake -B build_parallel_algos $CMAKE_COMMON_FLAGS
+        -S parallel_algos
         -DWITH_HIP=ON
         -DWITH_CUDA=OFF
-    - cmake --build build
+    - cmake --build build_parallel_algos
 
   artifacts:
     paths:
-      - build/
+      - build_parallel_algos/
     expire_in: 1 hour
 
 
-test_benchmarks_mi300:
-  needs: [build_benchmarks_mi300]
+test_parallel_algos_mi300:
+  needs: [build_parallel_algos_mi300]
   extends:
     - .uenv-runner-beverin-mi300
     - .test_common
   stage: test
   image: $UENV_IMAGE
   script:
-    - ctest --test-dir build --output-on-failure
+    - ctest --test-dir build_parallel_algos --output-on-failure
+
+
+build_fft_mi300:
+  extends:
+    - .uenv-runner-beverin-mi300
+    - .cmake_common
+    - .build_common
+  stage: build
+  image: $UENV_IMAGE
+  script:
+    - cmake -B build_fft $CMAKE_COMMON_FLAGS
+        -S fft
+        -DFFT_BENCH_GPU_BACKEND=ROCM
+    - cmake --build build_fft
+
+  artifacts:
+    paths:
+      - build_fft/
+    expire_in: 1 hour
+
+
+test_fft_mi300:
+  needs: [build_fft_mi300]
+  extends:
+    - .uenv-runner-beverin-mi300
+    - .test_common
+  stage: test
+  image: $UENV_IMAGE
+  script:
+    - ctest --test-dir build_fft --output-on-failure

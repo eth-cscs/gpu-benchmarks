@@ -6,25 +6,26 @@ stages:
   - test
 
 variables:
-  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v9"
+  UENV_IMAGE: "prgenv-gnu/25.6:v2"
   WITH_UENV_VIEW: "default"
+  SLURM_PARTITION: "normal"
 
 
-build_parallel_algos_mi300:
+build_parallel_algos_gh200:
   extends:
-    - .uenv-runner-beverin-mi300
+    - .uenv-runner-daint-gh200
     - .cmake_common
     - .build_common
   stage: build
   image: $UENV_IMAGE
   script:
     - cmake --version
-    - hipcc --version || echo "HIP not found in PATH"
+    - nvcc --version || echo "CUDA not found in PATH"
 
     - cmake -B build_parallel_algos $CMAKE_COMMON_FLAGS
         -S parallel_algos
-        -DWITH_HIP=ON
-        -DWITH_CUDA=OFF
+        -DWITH_HIP=OFF
+        -DWITH_CUDA=ON
     - cmake --build build_parallel_algos
 
   artifacts:
@@ -33,10 +34,10 @@ build_parallel_algos_mi300:
     expire_in: 1 hour
 
 
-test_parallel_algos_mi300:
-  needs: [build_parallel_algos_mi300]
+test_parallel_algos_gh200:
+  needs: [build_parallel_algos_gh200]
   extends:
-    - .uenv-runner-beverin-mi300
+    - .uenv-runner-daint-gh200
     - .test_common
   stage: test
   image: $UENV_IMAGE
@@ -44,9 +45,9 @@ test_parallel_algos_mi300:
     - ctest --test-dir build_parallel_algos --output-on-failure
 
 
-build_fft_mi300:
+build_fft_gh200:
   extends:
-    - .uenv-runner-beverin-mi300
+    - .uenv-runner-daint-gh200
     - .cmake_common
     - .build_common
   stage: build
@@ -54,7 +55,7 @@ build_fft_mi300:
   script:
     - cmake -B build_fft $CMAKE_COMMON_FLAGS
         -S fft
-        -DFFT_BENCH_GPU_BACKEND=ROCM
+        -DFFT_BENCH_GPU_BACKEND=CUDA
     - cmake --build build_fft
 
   artifacts:
@@ -63,10 +64,10 @@ build_fft_mi300:
     expire_in: 1 hour
 
 
-test_fft_mi300:
-  needs: [build_fft_mi300]
+test_fft_gh200:
+  needs: [build_fft_gh200]
   extends:
-    - .uenv-runner-beverin-mi300
+    - .uenv-runner-daint-gh200
     - .test_common
   stage: test
   image: $UENV_IMAGE

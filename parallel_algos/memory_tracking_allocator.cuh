@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include <cstdio>
 #include <atomic>
-#include <thrust/device_malloc.h>
+#include <cstdio>
 #include <thrust/device_free.h>
-#include <thrust/mr/memory_resource.h>
+#include <thrust/device_malloc.h>
 #include <thrust/mr/allocator.h>
+#include <thrust/mr/memory_resource.h>
 
 class tracking_mr final : public thrust::mr::memory_resource<>
 {
@@ -35,7 +35,8 @@ public:
         num_allocs.fetch_add(1);
 
         std::size_t peak = peak_bytes.load();
-        while (current > peak && !peak_bytes.compare_exchange_weak(peak, current));
+        while (current > peak && !peak_bytes.compare_exchange_weak(peak, current))
+            ;
 
         return static_cast<void*>(ptr.get());
     }

@@ -64,12 +64,15 @@ int main(int argc, char** argv)
     memory_tracker.reset();
     float timeReduceTracked = timeGpu(reduceTracked);
 
+    // time is measured in ms
+    float time_s = timeReduce / 1000;
     memory_tracker.print_stats();
     std::size_t numBytesMoved = numValues * sizeof(ValueType);
     std::printf("reduction normal time for %zu values: %f s, bandwidth: %f MiB/s\n", numValues,
-        timeReduce / 1000, float(numBytesMoved) / timeReduce / 1000);
+        time_s, float(numBytesMoved) / time_s / (1024 * 1024));
+    time_s = timeReduceTracked / 1000;
     std::printf("reduction with memory tracking time for %zu values: %f s, bandwidth: %f MiB/s\n",
-        numValues, timeReduceTracked / 1000, float(numBytesMoved) / timeReduceTracked / 1000);
+        numValues, time_s, float(numBytesMoved) / time_s / (1024 * 1024));
 
     if (power <= 25)
     {

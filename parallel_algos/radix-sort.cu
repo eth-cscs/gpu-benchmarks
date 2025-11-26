@@ -74,13 +74,16 @@ int main(int argc, char** argv)
     memory_tracker.reset();
     float timeRadixSortTracked = timeGpu(radixSortTracked);
 
+    // time is measured in ms
+    float time_s = timeRadixSort / 1000;
     memory_tracker.print_stats();
     std::size_t numBytesMoved = 2lu * numKeys * (sizeof(KeyType) + sizeof(ValueType));
     std::printf("radix sort normal time for %zu key-value pairs: %f s, bandwidth: %f MiB/s\n",
-        numKeys, timeRadixSort / 1000, float(numBytesMoved) / timeRadixSort / 1000);
+        numKeys, time_s, float(numBytesMoved) / time_s / (1024 * 1024));
+    time_s = timeRadixSortTracked / 1000;
     std::printf(
         "radix sort with memory tracking time for %zu key-value pairs: %f s, bandwidth: %f MiB/s\n",
-        numKeys, timeRadixSortTracked / 1000, float(numBytesMoved) / timeRadixSortTracked / 1000);
+        numKeys, time_s, float(numBytesMoved) / time_s / (1024 * 1024));
 
     return 0;
 }

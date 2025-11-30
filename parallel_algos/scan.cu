@@ -35,19 +35,19 @@ int main(int argc, char** argv)
     std::vector<ValueType> hostValues(numValues);
     {
         std::mt19937 gen;
-        std::uniform_int_distribution<ValueType>
-
-            dist(0, std::numeric_limits<uint32_t>::max());
-        std::generate(hostValues.begin(),
-
-            hostValues.end(), [&]() { return dist(gen); });
+        std::uniform_int_distribution<ValueType> dist(0, std::numeric_limits<uint32_t>::max());
+        std::generate(hostValues.begin(), hostValues.end(), [&]() { return dist(gen); });
     }
 
-    thrust::device_vector<ValueType> values = hostValues;
-    thrust::device_vector<ValueType> scannedValues(numValues);
+    tracking_mr mem_tracker;        // Input memory
+    tracking_mr tmp_mem_tracker;    // Temporary memory
 
-    tracking_mr memory_tracker;
-    thrust::mr::allocator<ValueType, tracking_mr> alloc(&memory_tracker);
+    tracking_mr::vector<ValueType> values(
+        hostValues.begin(), hostValues.end(), tracking_mr::allocator<ValueType>(&mem_tracker));
+    tracking_mr::vector<ValueType> scannedValues(
+        numValues, 0, tracking_mr::allocator<ValueType>(&mem_tracker));
+
+    tracking_mr::allocator<ValueType> tmp_alloc(&tmp_mem_tracker);
 
     auto scanNormal = [&]() {
 #ifdef __HIP__
@@ -62,10 +62,10 @@ int main(int argc, char** argv)
     auto scanTracked = [&]() {
 #ifdef __HIP__
         thrust::exclusive_scan(
-            thrust::hip::par(alloc), values.begin(), values.end(), scannedValues.begin());
+            thrust::hip::par(tmp_alloc), values.begin(), values.end(), scannedValues.begin());
 #else
         thrust::exclusive_scan(
-            thrust::cuda::par(alloc), values.begin(), values.end(), scannedValues.begin());
+            thrust::cuda::par(tmp_alloc), values.begin(), values.end(), scannedValues.begin());
 #endif
     };
 
@@ -74,12 +74,13 @@ int main(int argc, char** argv)
     thrust::device_vector<ValueType> scannedValuesNormal = scannedValues;
 
     scanTracked();    // warmup
-    memory_tracker.reset();
+    tmp_mem_tracker.reset();
     float timeScanTracked = timeGpu(scanTracked);
 
     // time is measured in ms
     float time_s = timeScan / 1000;
-    memory_tracker.print_stats();
+    mem_tracker.print_stats<false>();
+    tmp_mem_tracker.print_stats<true>();
     std::size_t numBytesMoved = 2lu * numValues * sizeof(ValueType);
     std::printf("exclusive scan normal time for %zu values: %f s, bandwidth: %f MiB/s\n", numValues,
         time_s, float(numBytesMoved) / time_s / (1024 * 1024));

@@ -13,10 +13,11 @@
 #include <cstdio>
 #include <thrust/device_free.h>
 #include <thrust/device_malloc.h>
+#include <thrust/device_vector.h>
 #include <thrust/mr/allocator.h>
 #include <thrust/mr/memory_resource.h>
 
-class tracking_mr final : public thrust::mr::memory_resource<>
+class tracking_mr final : public thrust::mr::memory_resource<thrust::device_ptr<void>>
 {
     std::atomic<std::size_t> current_bytes{0};
     std::atomic<std::size_t> peak_bytes{0};
@@ -24,10 +25,16 @@ class tracking_mr final : public thrust::mr::memory_resource<>
     std::atomic<std::size_t> num_allocs{0};
 
 public:
+    template <typename T>
+    using allocator = thrust::mr::allocator<T, tracking_mr>;
+
+    template <typename T>
+    using vector = thrust::device_vector<T, allocator<T>>;
+
     // default thrust alignment is used
-    virtual void* do_allocate(std::size_t bytes, std::size_t) override
+    thrust::device_ptr<void> do_allocate(std::size_t bytes, std::size_t) override
     {
-        thrust::device_ptr<uint8_t> ptr = thrust::device_malloc<uint8_t>(bytes);
+        thrust::device_ptr<void> ptr = thrust::device_malloc<uint8_t>(bytes);
         if (!ptr.get()) throw std::bad_alloc();
 
         std::size_t current = current_bytes.fetch_add(bytes) + bytes;
@@ -38,13 +45,13 @@ public:
         while (current > peak && !peak_bytes.compare_exchange_weak(peak, current))
             ;
 
-        return static_cast<void*>(ptr.get());
+        return ptr;
     }
 
-    virtual void do_deallocate(void* ptr, std::size_t bytes, std::size_t) override
+    void do_deallocate(thrust::device_ptr<void> ptr, std::size_t bytes, std::size_t) override
     {
         current_bytes.fetch_sub(bytes);
-        thrust::device_free(thrust::device_ptr<uint8_t>(static_cast<uint8_t*>(ptr)));
+        thrust::device_free(ptr);
     }
 
     void reset()
@@ -55,9 +62,10 @@ public:
         num_allocs.store(0);
     }
 
+    template <bool IsTemporary>
     void print_stats() const
     {
-        std::printf("Memory statistics:\n");
+        std::printf("%s memory statistics:\n", IsTemporary ? "Temporary" : "Input/Output");
         std::printf("  Total allocated: %f MiB\n", total_bytes.load() / (1024.0 * 1024.0));
         std::printf("  Peak allocated: %f MiB\n", peak_bytes.load() / (1024.0 * 1024.0));
         std::printf("  Number of allocations: %zu\n", num_allocs.load());

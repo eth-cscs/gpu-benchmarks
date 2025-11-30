@@ -36,10 +36,13 @@ int main(int argc, char** argv)
         std::generate(hostValues.begin(), hostValues.end(), [&]() { return dist(gen); });
     }
 
-    thrust::device_vector<ValueType> values = hostValues;
+    tracking_mr mem_tracker;        // Input memory
+    tracking_mr tmp_mem_tracker;    // Temporary memory
 
-    tracking_mr memory_tracker;
-    thrust::mr::allocator<ValueType, tracking_mr> alloc(&memory_tracker);
+    tracking_mr::vector<ValueType> values(
+        hostValues.begin(), hostValues.end(), tracking_mr::allocator<ValueType>(&mem_tracker));
+
+    tracking_mr::allocator<ValueType> tmp_alloc(&tmp_mem_tracker);
 
     auto reduceNormal = [&]() {
 #ifdef __HIP__
@@ -51,9 +54,9 @@ int main(int argc, char** argv)
 
     auto reduceTracked = [&]() {
 #ifdef __HIP__
-        return thrust::reduce(thrust::hip::par(alloc), values.begin(), values.end());
+        return thrust::reduce(thrust::hip::par(tmp_alloc), values.begin(), values.end());
 #else
-        return thrust::reduce(thrust::cuda::par(alloc), values.begin(), values.end());
+        return thrust::reduce(thrust::cuda::par(tmp_alloc), values.begin(), values.end());
 #endif
     };
 
@@ -61,12 +64,13 @@ int main(int argc, char** argv)
     float timeReduce = timeGpu(reduceNormal);    // to compare with memory tracking time
 
     auto deviceResultTracked = reduceTracked();
-    memory_tracker.reset();
+    tmp_mem_tracker.reset();
     float timeReduceTracked = timeGpu(reduceTracked);
 
     // time is measured in ms
     float time_s = timeReduce / 1000;
-    memory_tracker.print_stats();
+    mem_tracker.print_stats<false>();
+    tmp_mem_tracker.print_stats<true>();
     std::size_t numBytesMoved = numValues * sizeof(ValueType);
     std::printf("reduction normal time for %zu values: %f s, bandwidth: %f MiB/s\n", numValues,
         time_s, float(numBytesMoved) / time_s / (1024 * 1024));

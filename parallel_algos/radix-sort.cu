@@ -40,12 +40,16 @@ int main(int argc, char** argv)
         std::generate(hostKeys.begin(), hostKeys.end(), [&]() { return dist(gen); });
     }
 
-    thrust::device_vector<KeyType> keys = hostKeys;
-    thrust::device_vector<ValueType> ordering(numKeys);
+    tracking_mr mem_tracker;        // Input memory
+    tracking_mr tmp_mem_tracker;    // Temporary memory
+
+    tracking_mr::vector<KeyType> keys(
+        hostKeys.begin(), hostKeys.end(), tracking_mr::allocator<KeyType>(&mem_tracker));
+    tracking_mr::vector<ValueType> ordering(
+        numKeys, 0, tracking_mr::allocator<ValueType>(&mem_tracker));
     thrust::sequence(ordering.begin(), ordering.end(), 0);
 
-    tracking_mr memory_tracker;
-    thrust::mr::allocator<KeyType, tracking_mr> alloc(&memory_tracker);
+    tracking_mr::allocator<KeyType> tmp_alloc(&tmp_mem_tracker);
 
     auto radixSortNormal = [&]() {
 #ifdef __HIP__
@@ -57,9 +61,11 @@ int main(int argc, char** argv)
 
     auto radixSortTracked = [&]() {
 #ifdef __HIP__
-        thrust::sort_by_key(thrust::hip::par(alloc), keys.begin(), keys.end(), ordering.begin());
+        thrust::sort_by_key(
+            thrust::hip::par(tmp_alloc), keys.begin(), keys.end(), ordering.begin());
 #else
-        thrust::sort_by_key(thrust::cuda::par(alloc), keys.begin(), keys.end(), ordering.begin());
+        thrust::sort_by_key(
+            thrust::cuda::par(tmp_alloc), keys.begin(), keys.end(), ordering.begin());
 #endif
     };
 
@@ -67,16 +73,17 @@ int main(int argc, char** argv)
     float timeRadixSort = timeGpu(radixSortNormal);    // to compare with memory tracking time
 
     // Re-initialize keys for tracked version
-    keys = hostKeys;
+    thrust::copy(hostKeys.begin(), hostKeys.end(), keys.begin());
     thrust::sequence(ordering.begin(), ordering.end(), 0);
 
     radixSortTracked();    // warmup
-    memory_tracker.reset();
+    tmp_mem_tracker.reset();
     float timeRadixSortTracked = timeGpu(radixSortTracked);
 
     // time is measured in ms
     float time_s = timeRadixSort / 1000;
-    memory_tracker.print_stats();
+    mem_tracker.print_stats<false>();
+    tmp_mem_tracker.print_stats<true>();
     std::size_t numBytesMoved = 2lu * numKeys * (sizeof(KeyType) + sizeof(ValueType));
     std::printf("radix sort normal time for %zu key-value pairs: %f s, bandwidth: %f MiB/s\n",
         numKeys, time_s, float(numBytesMoved) / time_s / (1024 * 1024));

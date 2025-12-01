@@ -77,13 +77,16 @@ int main(int argc, char** argv)
     memory_tracker.reset();
     float timeScanTracked = timeGpu(scanTracked);
 
+    // time is measured in ms
+    float time_s = timeScan / 1000;
     memory_tracker.print_stats();
     std::size_t numBytesMoved = 2lu * numValues * sizeof(ValueType);
     std::printf("exclusive scan normal time for %zu values: %f s, bandwidth: %f MiB/s\n", numValues,
-        timeScan / 1000, float(numBytesMoved) / timeScan / 1000);
+        time_s, float(numBytesMoved) / time_s / (1024 * 1024));
+    time_s = timeScanTracked / 1000;
     std::printf(
         "exclusive scan with memory tracking time for %zu values: %f s, bandwidth: %f MiB/s\n",
-        numValues, timeScanTracked / 1000, float(numBytesMoved) / timeScanTracked / 1000);
+        numValues, time_s, float(numBytesMoved) / time_s / (1024 * 1024));
 
     if (power <= 25)
     {

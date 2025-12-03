@@ -2,8 +2,8 @@ include:
   - remote: 'https://gitlab.com/cscs-ci/recipes/-/raw/master/templates/v2/.ci-ext.yml'
 
 variables:
-  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v5"
-  WITH_UENV_VIEW: "default-llvm-amdgpu"
+  UENV_IMAGE: "prgenv-gnu/25.07-6.3.3:v10"
+  WITH_UENV_VIEW: "default"
   SLURM_TIMELIMIT: "00:15:00"
   SLURM_JOB_NUM_NODES: 1
   SLURM_NTASKS: 1

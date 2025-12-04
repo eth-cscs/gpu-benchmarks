@@ -19,13 +19,12 @@ test_reframe:
     - cmake --version
     - hipcc --version || echo "HIP not found in PATH"
     # Install reframe
-    - git clone --depth 1 -b v4.8.4 https://github.com/reframe-hpc/reframe.git
-    - pushd reframe && ./bootstrap.sh && popd
+    - pip install reframe-hpc==4.8.4
     # Run gpu-benchmarks reframe tests
     - git clone --depth 1 https://github.com/eth-cscs/cscs-reframe-tests.git
     - cd cscs-reframe-tests
     - |
       for benchmark in checks/microbenchmarks/gpu/gpu_benchmarks/*.py; do
         echo "Running benchmark: $benchmark"
-        UENV=$UENV_IMAGE ../reframe/bin/reframe -C config/cscs.py -c $benchmark --system beverin:mi300 -r -v --keep-stage-files
+        UENV=$UENV_IMAGE reframe -C config/cscs.py -c $benchmark --system beverin:mi300 -r -v --keep-stage-files
       done

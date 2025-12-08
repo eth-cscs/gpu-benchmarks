@@ -18,14 +18,14 @@
 #include <chrono>
 #include "./cuda_runtime.hpp"
 
-inline void checkErr(cudaError_t err, const char* filename, int lineno, const char* funcName)
+inline void checkErr(cudaError_t err, char const* filename, int lineno, char const* funcName)
 {
     if (err != cudaSuccess)
     {
-        const char* errName = cudaGetErrorName(err);
-        const char* errStr  = cudaGetErrorString(err);
-        fprintf(stderr, "CUDA Error at %s:%d. Function %s returned err %d: %s - %s\n", filename, lineno, funcName, err,
-                errName, errStr);
+        char const* errName = cudaGetErrorName(err);
+        char const* errStr = cudaGetErrorString(err);
+        fprintf(stderr, "CUDA Error at %s:%d. Function %s returned err %d: %s - %s\n", filename,
+            lineno, funcName, err, errName, errStr);
         exit(EXIT_FAILURE);
     }
 }
@@ -33,7 +33,7 @@ inline void checkErr(cudaError_t err, const char* filename, int lineno, const ch
 #define checkGpuErrors(errcode) checkErr((errcode), __FILE__, __LINE__, #errcode)
 
 //! @brief time a generic unary function
-template<class F>
+template <class F>
 float timeGpu(F&& f)
 {
     cudaEvent_t start, stop;
@@ -56,7 +56,7 @@ float timeGpu(F&& f)
     return t0;
 }
 
-template<class F>
+template <class F>
 float timeCpu(F&& f)
 {
     auto t0 = std::chrono::high_resolution_clock::now();

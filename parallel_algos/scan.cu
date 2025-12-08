@@ -29,14 +29,18 @@ int main(int argc, char** argv)
 {
     using ValueType = uint64_t;
 
-    int power             = argc > 1 ? std::stoi(argv[1]) : 25;
+    int power = argc > 1 ? std::stoi(argv[1]) : 25;
     std::size_t numValues = 1lu << power;
 
     std::vector<ValueType> hostValues(numValues);
     {
         std::mt19937 gen;
-        std::uniform_int_distribution<ValueType> dist(0, std::numeric_limits<uint32_t>::max());
-        std::generate(hostValues.begin(), hostValues.end(), [&](){ return dist(gen); });
+        std::uniform_int_distribution<ValueType>
+
+            dist(0, std::numeric_limits<uint32_t>::max());
+        std::generate(hostValues.begin(),
+
+            hostValues.end(), [&]() { return dist(gen); });
     }
 
     thrust::device_vector<ValueType> values = hostValues;
@@ -45,45 +49,53 @@ int main(int argc, char** argv)
     tracking_mr memory_tracker;
     thrust::mr::allocator<ValueType, tracking_mr> alloc(&memory_tracker);
 
-    auto scanNormal = [&]()
-    {
+    auto scanNormal = [&]() {
 #ifdef __HIP__
-        thrust::exclusive_scan(thrust::hip::par, values.begin(), values.end(), scannedValues.begin());
+        thrust::exclusive_scan(
+            thrust::hip::par, values.begin(), values.end(), scannedValues.begin());
 #else
-        thrust::exclusive_scan(thrust::cuda::par, values.begin(), values.end(), scannedValues.begin());
+        thrust::exclusive_scan(
+            thrust::cuda::par, values.begin(), values.end(), scannedValues.begin());
 #endif
     };
 
-    auto scanTracked = [&]()
-    {
+    auto scanTracked = [&]() {
 #ifdef __HIP__
-        thrust::exclusive_scan(thrust::hip::par(alloc), values.begin(), values.end(), scannedValues.begin());
+        thrust::exclusive_scan(
+            thrust::hip::par(alloc), values.begin(), values.end(), scannedValues.begin());
 #else
-        thrust::exclusive_scan(thrust::cuda::par(alloc), values.begin(), values.end(), scannedValues.begin());
+        thrust::exclusive_scan(
+            thrust::cuda::par(alloc), values.begin(), values.end(), scannedValues.begin());
 #endif
     };
 
-    scanNormal(); // warmup
+    scanNormal();    // warmup
     float timeScan = timeGpu(scanNormal);
     thrust::device_vector<ValueType> scannedValuesNormal = scannedValues;
 
-    scanTracked(); // warmup
+    scanTracked();    // warmup
     memory_tracker.reset();
     float timeScanTracked = timeGpu(scanTracked);
 
+    // time is measured in ms
+    float time_s = timeScan / 1000;
     memory_tracker.print_stats();
     std::size_t numBytesMoved = 2lu * numValues * sizeof(ValueType);
-    std::printf("exclusive scan normal time for %zu values: %f s, bandwidth: %f MiB/s\n",
-                numValues, timeScan / 1000, float(numBytesMoved) / timeScan / 1000);
-    std::printf("exclusive scan with memory tracking time for %zu values: %f s, bandwidth: %f MiB/s\n",
-                numValues, timeScanTracked / 1000, float(numBytesMoved) / timeScanTracked / 1000);
+    std::printf("exclusive scan normal time for %zu values: %f s, bandwidth: %f MiB/s\n", numValues,
+        time_s, float(numBytesMoved) / time_s / (1024 * 1024));
+    time_s = timeScanTracked / 1000;
+    std::printf(
+        "exclusive scan with memory tracking time for %zu values: %f s, bandwidth: %f MiB/s\n",
+        numValues, time_s, float(numBytesMoved) / time_s / (1024 * 1024));
 
     if (power <= 25)
     {
         std::vector<ValueType> hostScan(numValues);
         std::exclusive_scan(hostValues.begin(), hostValues.end(), hostScan.begin(), ValueType(0));
-        std::printf("GPU matches CPU: %s\n", (hostScan.back() == scannedValues.back() ? "PASS" : "FAIL"));
-        std::printf("GPU normal matches GPU with tracked memory: %s\n", (scannedValuesNormal.back() == scannedValues.back() ? "PASS" : "FAIL"));
+        std::printf(
+            "GPU matches CPU: %s\n", (hostScan.back() == scannedValues.back() ? "PASS" : "FAIL"));
+        std::printf("GPU normal matches GPU with tracked memory: %s\n",
+            (scannedValuesNormal.back() == scannedValues.back() ? "PASS" : "FAIL"));
     }
 
     return 0;

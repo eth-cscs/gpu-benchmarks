@@ -26,14 +26,14 @@ int main(int argc, char** argv)
 {
     using ValueType = uint64_t;
 
-    int power             = argc > 1 ? std::stoi(argv[1]) : 25;
+    int power = argc > 1 ? std::stoi(argv[1]) : 25;
     std::size_t numValues = 1lu << power;
 
     std::vector<ValueType> hostValues(numValues);
     {
         std::mt19937 gen;
         std::uniform_int_distribution<ValueType> dist(0, std::numeric_limits<uint32_t>::max());
-        std::generate(hostValues.begin(), hostValues.end(), [&](){ return dist(gen); });
+        std::generate(hostValues.begin(), hostValues.end(), [&]() { return dist(gen); });
     }
 
     thrust::device_vector<ValueType> values = hostValues;
@@ -41,8 +41,7 @@ int main(int argc, char** argv)
     tracking_mr memory_tracker;
     thrust::mr::allocator<ValueType, tracking_mr> alloc(&memory_tracker);
 
-    auto reduceNormal = [&]()
-    {
+    auto reduceNormal = [&]() {
 #ifdef __HIP__
         return thrust::reduce(thrust::hip::par, values.begin(), values.end());
 #else
@@ -50,8 +49,7 @@ int main(int argc, char** argv)
 #endif
     };
 
-    auto reduceTracked = [&]()
-    {
+    auto reduceTracked = [&]() {
 #ifdef __HIP__
         return thrust::reduce(thrust::hip::par(alloc), values.begin(), values.end());
 #else
@@ -66,18 +64,22 @@ int main(int argc, char** argv)
     memory_tracker.reset();
     float timeReduceTracked = timeGpu(reduceTracked);
 
+    // time is measured in ms
+    float time_s = timeReduce / 1000;
     memory_tracker.print_stats();
     std::size_t numBytesMoved = numValues * sizeof(ValueType);
-    std::printf("reduction normal time for %zu values: %f s, bandwidth: %f MiB/s\n",
-                numValues, timeReduce / 1000, float(numBytesMoved) / timeReduce / 1000);
+    std::printf("reduction normal time for %zu values: %f s, bandwidth: %f MiB/s\n", numValues,
+        time_s, float(numBytesMoved) / time_s / (1024 * 1024));
+    time_s = timeReduceTracked / 1000;
     std::printf("reduction with memory tracking time for %zu values: %f s, bandwidth: %f MiB/s\n",
-            numValues, timeReduceTracked / 1000, float(numBytesMoved) / timeReduceTracked / 1000);
+        numValues, time_s, float(numBytesMoved) / time_s / (1024 * 1024));
 
     if (power <= 25)
     {
         auto hostResult = std::accumulate(hostValues.begin(), hostValues.end(), ValueType(0));
         std::printf("CPU matches GPU: %s\n", (deviceResult == hostResult ? "PASS" : "FAIL"));
-        std::printf("GPU normal matches GPU with tracked memory: %s\n", (deviceResult == deviceResultTracked ? "PASS" : "FAIL"));
+        std::printf("GPU normal matches GPU with tracked memory: %s\n",
+            (deviceResult == deviceResultTracked ? "PASS" : "FAIL"));
     }
 
     return 0;

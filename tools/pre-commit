@@ -1,0 +1,20 @@
+#!/bin/bash
+# To install this hook, run from the repository root:
+#   ln -sf ../../tools/pre-commit .git/hooks/pre-commit
+
+cxxfiles=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(c|cpp|hpp|h|cu|cuh)$')
+
+if [ -z "$cxxfiles" ]; then
+    exit 0
+fi
+
+failed=0
+for file in $cxxfiles; do
+    if ! clang-format-16 --dry-run --Werror "$file" 2>/dev/null; then
+        echo "$file formatted, please review.."
+        clang-format-16 -i "$file"
+        failed=1
+    fi
+done
+
+exit $failed

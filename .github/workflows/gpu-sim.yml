@@ -1,0 +1,132 @@
+name: GPU Simulator
+
+# Optional, non-required check. The hosted runners have no GPU, so this builds
+# the parallel_algos benchmarks and runs them on a simulated NVIDIA H100 (CUDA)
+# and a simulated AMD MI300X (HIP) with
+# https://github.com/pantheongpu/pantheonsim. A simulator cannot reproduce
+# hardware-specific behavior or timing, so it complements the real-GPU CI and
+# does not replace it. Only correctness is checked, never performance.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "parallel_algos/**"
+      - "common/**"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cuda-sim:
+    name: parallel_algos on CUDA 13.0 and simulated H100
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and CUDA toolkit
+        uses: pantheongpu/setup-pantheonsim@deff5781e8adfd83dec98dd5242dcbc96a564773 # v0.1.10
+        with:
+          gpu: nvidia/h100
+          cuda-toolkit: "13.0"
+
+      # 90-virtual embeds PTX only, which the simulator runs. The simulator
+      # needs a shared CUDA runtime.
+      - name: Configure
+        run: |
+          cmake -S parallel_algos -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DWITH_HIP=OFF \
+            -DCMAKE_CUDA_ARCHITECTURES=90-virtual \
+            -DCMAKE_CUDA_RUNTIME_LIBRARY=Shared
+
+      - name: Build
+        run: cmake --build build -j3
+
+      # reduce and scan compare the GPU result with a CPU result and print
+      # PASS or FAIL, but always exit with status 0, so the output is checked
+      # here. radix-sort has no result check; it only has to run to completion.
+      # The problem size is 2^20 values to keep the simulated run short.
+      - name: Run
+        run: |
+          status=0
+          for t in reduce scan radix-sort; do
+            echo "::group::$t"
+            vgpu run ./build/$t 20 2>&1 | tee "$t.log"
+            rc=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            expected=2
+            [ "$t" = radix-sort ] && expected=0
+            passed=$(grep -c ": PASS" "$t.log" || true)
+            if [ "$rc" -ne 0 ] || [ "$passed" -ne "$expected" ] \
+               || grep -qiE "FAIL|VirtualGPU error|no device|no CUDA-capable" "$t.log"; then
+              echo "::error::$t failed (exit $rc, $passed of $expected checks passed)"
+              status=1
+            fi
+          done
+          exit $status
+
+  hip-sim:
+    name: parallel_algos on ROCm 7.1 and simulated MI300X
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and ROCm
+        uses: pantheongpu/setup-pantheonsim@deff5781e8adfd83dec98dd5242dcbc96a564773 # v0.1.10
+        with:
+          gpu: amd/mi300x
+          cuda-toolkit: none
+          rocm: "7.1"
+
+      # The action installs the compiler only; the benchmarks use rocThrust,
+      # and find_package(hip) needs comgr and the HSA runtime.
+      - name: Install rocThrust and the HIP CMake dependencies
+        run: sudo apt-get install -y comgr hsa-rocr rocthrust-dev rocprim-dev hipcub-dev
+
+      - name: Configure
+        run: |
+          export PATH="$PATH:/opt/rocm/llvm/bin"
+          cmake -S parallel_algos -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DWITH_CUDA=OFF \
+            -DCMAKE_HIP_ARCHITECTURES=gfx942 \
+            -DCMAKE_PREFIX_PATH=/opt/rocm
+
+      - name: Build
+        run: |
+          export PATH="$PATH:/opt/rocm/llvm/bin"
+          cmake --build build -j3
+
+      # Same output check as the CUDA job.
+      - name: Run
+        run: |
+          status=0
+          for t in reduce scan radix-sort; do
+            echo "::group::$t"
+            vgpu run ./build/$t 20 2>&1 | tee "$t.log"
+            rc=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            expected=2
+            [ "$t" = radix-sort ] && expected=0
+            passed=$(grep -c ": PASS" "$t.log" || true)
+            if [ "$rc" -ne 0 ] || [ "$passed" -ne "$expected" ] \
+               || grep -qiE "FAIL|VirtualGPU error|no device|no ROCm-capable" "$t.log"; then
+              echo "::error::$t failed (exit $rc, $passed of $expected checks passed)"
+              status=1
+            fi
+          done
+          exit $status
